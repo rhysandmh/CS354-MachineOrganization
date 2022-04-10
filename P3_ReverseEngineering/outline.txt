@@ -1,0 +1,224 @@
+objdump -d competitors_executable > disassemble.dump
+NOTES: -d -> dissassembler
+
+gdb competitors_executable
+layout asm
+layout regs
+
+
+
+
+prototypes- Get information from where the function is called from 
+			First 
+
+-Algorithm_1-
+$8000 = -0xc(%rbp)
+$63   = -0x8(%rbp)
+
+8000 = %edx
+63   = %eax
+8000 + 63 = %eax
+8063 = -0x4(rbp)
+8063 = %eax
+
+TOTAL VARIABLES = 3
+a = -0xc(%rbp)
+b= -0x8(%rbp)
+c = -0x4(rbp)
+
+TOTAL PARAM = 0
+
+RETURN TYPE = INT
+
+ 00000000000011a9 <algorithm_1>:     //PROLOGUE
+142     11a9:   f3 0f 1e fa             endbr64
+143     11ad:   55                      push   %rbp
+144     11ae:   48 89 e5                mov    %rsp,%rbp
+145                                     //BODY
+146     11b1:   c7 45 f4 40 1f 00 00    movl   $0x1f40,-0xc(%rbp) #Store $8000 on stack
+147     11b8:   c7 45 f8 3f 00 00 00    movl   $0x3f,-0x8(%rbp) #Store $63 on stack
+148     11bf:   8b 55 f4                mov    -0xc(%rbp),%edx  #$8000 = %edx
+149     11c2:   8b 45 f8                mov    -0x8(%rbp),%eax  #$63   = %eax
+150     11c5:   01 d0                   add    %edx,%eax        #8000+63 = %eax
+151     11c7:   89 45 fc                mov    %eax,-0x4(%rbp)  #8063 = -0x4(%rbp)
+152                                     //PREP RETURN VAL
+153     11ca:   8b 45 fc                mov    -0x4(%rbp),%eax  #8063 = %eax
+154                                     //EPILOGUE
+155     11cd:   5d                      pop    %rbp
+156     11ce:   c3                      retq
+
+
+****3 exceptions to break control flow (conditionals, loops, function calls)
+***-Look for compare and jump commands
+
+
+
+-Algorithm_2-
+PARAM1 => -0x14(%rbp) (INT)
+PARAM2 => -0x18(%rbp) (INT)
+PARAM1 => %EAX
+PARAM1 => -0x10(%rbp)
+PARAM2 => %EAX
+PARAM2 => -0xc(%rbp)
+PARAM1 => %EAX
+COMPARE
+JUMP CONDITIONAL
+PARAM1 => %EDX
+PARAM1 => %EAX
+%EAX = %EAX + %EAX = PARAM1 * 2
+%EAX = %EAX + %EDX = (PARAM1*2) + PARAM1 = PARAM1 *3
+(PARAM1*3) => -0x4(%rbp)
+PARAM2 => %EAX
+PARAM2 => -0x4(%rbp)
+-0x4(%rbp) = %eax + -0x4(%rbp) = PARAM2 *2
+-0x4(%rbp) => %EAX		*PREP RETURN VALUE
+JUMP TO EPILOGUE
+CONDITIONAL JUMP - LINE: 1208
+PARAM1 => %eax
+182     120b:   99                      cltd					division
+183     120c:   f7 7d f4                idivl  -0xc(%rbp)
+184     120f:   89 45 f8                mov    %eax,-0x8(%rbp)
+EPILOGUE
+
+TOTAL PARAM = 2
+
+Variables 
+
+RETURN TYPE = INT
+
+
+ 00000000000011cf <algorithm_2>:     //PROLOGUE -- Only jumps further down (not a loop)
+159     11cf:   f3 0f 1e fa             endbr64
+160     11d3:   55                      push   %rbp
+161     11d4:   48 89 e5                mov    %rsp,%rbp
+162                     w               //BODY
+163     11d7:   89 7d ec                mov    %edi,-0x14(%rbp)
+164     11da:   89 75 e8                mov    %esi,-0x18(%rbp)
+165     11dd:   8b 45 ec                mov    -0x14(%rbp),%eax
+166     11e0:   89 45 f0                mov    %eax,-0x10(%rbp)
+167     11e3:   8b 45 e8                mov    -0x18(%rbp),%eax
+168     11e6:   89 45 f4                mov    %eax,-0xc(%rbp)
+169     11e9:   8b 45 f0                mov    -0x10(%rbp),%eax
+170     11ec:   3b 45 f4                cmp    -0xc(%rbp),%eax
+171     11ef:   7d 17                   jge    1208 <algorithm_2+0x39> #Conditional jump
+172     11f1:   8b 55 f0                mov    -0x10(%rbp),%edx
+173     11f4:   89 d0                   mov    %edx,%eax
+174     11f6:   01 c0                   add    %eax,%eax
+175     11f8:   01 d0                   add    %edx,%eax
+176     11fa:   89 45 fc                mov    %eax,-0x4(%rbp)
+177     11fd:   8b 45 f4                mov    -0xc(%rbp),%eax
+178     1200:   01 45 fc                add    %eax,-0x4(%rbp)
+179     1203:   8b 45 fc                mov    -0x4(%rbp),%eax         #Prepares return value
+180     1206:   eb 0d                   jmp    1215 <algorithm_2+0x46> #Jump to epilogue
+
+181     1208:   8b 45 f0                mov    -0x10(%rbp),%eax
+182     120b:   99                      cltd
+183     120c:   f7 7d f4                idivl  -0xc(%rbp)
+184     120f:   89 45 f8                mov    %eax,-0x8(%rbp)
+185                                     //PREP RETURN VAL
+
+-Algorithm_3-
+
+TOTAL PARAM = 2
+
+Variables 
+
+RETURN TYPE = INT
+
+
+316                                     //Algorithm 3:
+317                                     //SETUP - Has two parameters
+318     13a6:   8b 55 e4                mov    -0x1c(%rbp),%edx
+319     13a9:   8b 45 e0                mov    -0x20(%rbp),%eax
+320     13ac:   89 d6                   mov    %edx,%esi
+321     13ae:   89 c7                   mov    %eax,%edi
+322     13b0:   e8 7c fe ff ff          callq  1231 <algorithm_3>i
+323                                     //RETURN VAL: Using %EAX => Returning integer
+324     13b5:   89 45 f4                mov    %eax,-0xc(%rbp)
+325
+
+0000000000001217 <helper_3>:
+192     1217:   f3 0f 1e fa             endbr64
+193     121b:   55                      push   %rbp
+194     121c:   48 89 e5                mov    %rsp,%rbp
+195     121f:   89 7d ec                mov    %edi,-0x14(%rbp)		#D => A
+196     1222:   8b 45 ec                mov    -0x14(%rbp),%eax		#A => EAX
+197     1225:   89 45 fc                mov    %eax,-0x4(%rbp)		#EAX => C
+198     1228:   83 6d fc 01             subl   $0x1,-0x4(%rbp)		#Subtract 1 from c
+199     122c:   8b 45 fc                mov    -0x4(%rbp),%eax		#C => EAX
+200     122f:   5d                      pop    %rbp
+201     1230:   c3                      retq
+
+
+202
+203 0000000000001231 <algorithm_3>:     //PROLOGUE
+204     1231:   f3 0f 1e fa             endbr64
+205     1235:   55                      push   %rbp
+206     1236:   48 89 e5                mov    %rsp,%rbp
+207                                     //RESERVE STACK MEMORY
+208     1239:   48 83 ec 18             sub    $0x18,%rsp
+209                                     //BODY
+210     123d:   89 7d ec                mov    %edi,-0x14(%rbp)			#PARAM1 => -0x14(%rbp)
+211     1240:   89 75 e8                mov    %esi,-0x18(%rbp)			#PARAM2 => -0x18(%rbp)
+212     1243:   8b 45 ec                mov    -0x14(%rbp),%eax			#PARAM1 => eax
+213     1246:   89 45 fc                mov    %eax,-0x4(%rbp)			#PARAM1 => -0x4(%rbp)
+214     1249:   8b 45 e8                mov    -0x18(%rbp),%eax			#PARAM2 => eax
+215     124c:   89 45 f4                mov    %eax,-0xc(%rbp)			#PARAM2 => -0xc(%rbp)
+216     124f:   c7 45 f8 00 00 00 00    movl   $0x0,-0x8(%rbp)			#0 => -0x8(%rbp)
+217                                     //JUMP
+218     1256:   eb 13                   jmp    126b <algorithm_3+0x3a>
+219     1258:   8b 45 fc                mov    -0x4(%rbp),%eax          #Conditional jump target PARAM1=> EAX
+220     125b:   01 45 f8                add    %eax,-0x8(%rbp)			#PARAM1 + -0x8(%rbp) => -0x8(%rbp)
+221     125e:   8b 45 f4                mov    -0xc(%rbp),%eax			#D => EAX
+222     1261:   89 c7                   mov    %eax,%edi                #Give one param to function call D
+223     1263:   e8 af ff ff ff          callq  1217 <helper_3>          #Function call, EAX contains -0x4(%rbp) 
+224     1268:   89 45 f4                mov    %eax,-0xc(%rbp)          #C into D
+225     126b:   83 7d f4 00             cmpl   $0x0,-0xc(%rbp)          #Jump Target
+226     126f:   7f e7                   jg     1258 <algorithm_3+0x27>  #Conditional Jump Backwards - LOOP
+227     1271:   8b 45 f8                mov    -0x8(%rbp),%eax
+228     1274:   c9                      leaveq
+229     1275:   c3                      retq
+
+
+
+-Algorithm_4-
+
+--Parameter Table--
+Parameter			Memory Location
+int p1 = 2802		-0x28(%rbp)
+int p2 = 3			-0x24(%rbp)
+int p3 = 13			-0x20(%rbp)
+int p4 = 17			-0x1c(%rbp)
+int p5 = 48			-0x18(%rbp)
+
+
+326                                     //Algorithm 4:
+327                                     //SETUP - Has two parameters | Call by reference
+328     13b8:   48 8d 55 c4             lea    -0x3c(%rbp),%rdx         #Likely a call by reference (using pointers)
+329     13bc:   8b 45 e8                mov    -0x18(%rbp),%eax
+330     13bf:   48 89 d6                mov    %rdx,%rsi                #Holds a pointer (8 bytes)
+331     13c2:   89 c7                   mov    %eax,%edi                #Holds an integer
+332     13c4:   e8 ad fe ff ff          callq  1276 <algorithm_4>
+333                                     //VOID FUNCTION - NO RETURN VAL
+
+
+ 0000000000001276 <algorithm_4>:     //PROLOGUE VOID FUNCTION
+232     1276:   f3 0f 1e fa             endbr64
+233     127a:   55                      push   %rbp
+234     127b:   48 89 e5                mov    %rsp,%rbp
+235                                     //BODY
+236     127e:   89 7d ec                mov    %edi,-0x14(%rbp)         #PARAM1 = -0x14(%rbp) (INT)
+237     1281:   48 89 75 e0             mov    %rsi,-0x20(%rbp)		    #PARAM2 = -0x20(%rbp) (POINTER)
+238     1285:   8b 45 ec                mov    -0x14(%rbp),%eax			#PARAM1 => %EAX
+239     1288:   89 45 f4                mov    %eax,-0xc(%rbp)			#PARAM1 => -0xc(%rbp)
+240     128b:   48 8b 45 e0             mov    -0x20(%rbp),%rax			#PARAM2 => %RAX
+241     128f:   48 89 45 f8             mov    %rax,-0x8(%rbp)			#PARAM2  => -0x8(%rbp)
+242     1293:   8b 55 f4                mov    -0xc(%rbp),%edx			#PARAM1 => %EDX
+243     1296:   89 d0                   mov    %edx,%eax				#PARAM1 => %EAX
+244     1298:   01 c0                   add    %eax,%eax				#%EAX = 2*EAX = 2*PARAM1
+245     129a:   01 c2                   add    %eax,%edx				#%EDX = %EAX + %EDX = 3*PARAM1
+246     129c:   48 8b 45 f8             mov    -0x8(%rbp),%rax			#PARAM2 => RAX
+247     12a0:   89 10                   mov    %edx,(%rax)          	#3*PARAM1 => MEM[PARAM2]
+248     12a2:   90                      nop								#NO OPERATION
+249     12a3:   5d                      pop    %rbp
+250     12a4:   c3                      retq
